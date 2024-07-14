@@ -1,124 +1,141 @@
 <template>
-  <div class="drawer-container">
-    <div>
-      <h3 class="drawer-title">系统布局配置</h3>
+  <el-drawer v-model="settingsVisible" size="300" title="项目配置">
+    <el-divider>主题设置</el-divider>
 
-      <div class="drawer-item">
-        <span>主题色</span>
-        <theme-picker style="float: right;height: 26px;margin: -3px 8px 0 0;" @change="themeChange" />
-      </div>
-
-      <div class="drawer-item">
-        <span>开启 Tags-View</span>
-        <el-switch v-model="tagsView" class="drawer-switch" />
-      </div>
-
-      <div class="drawer-item">
-        <span>固定 Header</span>
-        <el-switch v-model="fixedHeader" class="drawer-switch" />
-      </div>
-
-      <div class="drawer-item">
-        <span>侧边栏 Logo</span>
-        <el-switch v-model="sidebarLogo" class="drawer-switch" />
-      </div>
-
+    <div class="flex-center">
+      <el-switch
+        v-model="isDark"
+        :active-icon="Moon"
+        :inactive-icon="Sunny"
+        @change="changeTheme"
+      />
     </div>
-  </div>
+
+    <el-divider>界面设置</el-divider>
+
+    <div class="settings-option">
+      <el-text>主题颜色</el-text>
+      <ThemeColorPicker
+        v-model="settingsStore.themeColor"
+        @update:model-value="changeThemeColor"
+      />
+    </div>
+
+    <div class="settings-option">
+      <el-text>开启 Tags-View</el-text>
+      <el-switch v-model="settingsStore.tagsView" />
+    </div>
+
+    <div class="settings-option">
+      <span class="text-xs">固定 Header</span>
+      <el-switch v-model="settingsStore.fixedHeader" />
+    </div>
+
+    <div class="settings-option">
+      <span class="text-xs">侧边栏 Logo</span>
+      <el-switch v-model="settingsStore.sidebarLogo" />
+    </div>
+
+    <div class="settings-option">
+      <span class="text-xs">开启水印</span>
+      <el-switch v-model="settingsStore.watermarkEnabled" />
+    </div>
+
+    <el-divider>导航设置</el-divider>
+
+    <LayoutSelect
+      v-model="settingsStore.layout"
+      @update:model-value="changeLayout"
+    />
+  </el-drawer>
 </template>
 
-<script>
-import ThemePicker from '@/components/ThemePicker'
+<script setup lang="ts">
+import { useSettingsStore, usePermissionStore, useAppStore } from "@/store";
+import { Sunny, Moon } from "@element-plus/icons-vue";
+import { LayoutEnum } from "@/enums/LayoutEnum";
+import { ThemeEnum } from "@/enums/ThemeEnum";
 
-export default {
-  components: { ThemePicker },
-  data() {
-    return {
-    }
+const route = useRoute();
+const appStore = useAppStore();
+const settingsStore = useSettingsStore();
+const permissionStore = usePermissionStore();
+
+const settingsVisible = computed({
+  get() {
+    return settingsStore.settingsVisible;
   },
-  computed: {
-    fixedHeader: {
-      get() {
-        return this.$store.state.settings.fixedHeader
-      },
-      set(val) {
-        this.$store.dispatch('settings/changeSetting', {
-          key: 'fixedHeader',
-          value: val
-        })
+  set() {
+    settingsStore.settingsVisible = false;
+  },
+});
+
+/**
+ * 切换主题颜色
+ */
+function changeThemeColor(color: string) {
+  settingsStore.changeThemeColor(color);
+}
+
+/**
+ * 切换主题
+ */
+const isDark = ref<boolean>(settingsStore.theme === ThemeEnum.DARK);
+const changeTheme = (val: any) => {
+  isDark.value = val;
+  settingsStore.changeTheme(isDark.value ? ThemeEnum.DARK : ThemeEnum.LIGHT);
+};
+
+/**
+ * 切换布局
+ */
+function changeLayout(layout: string) {
+  settingsStore.changeLayout(layout);
+  if (layout === LayoutEnum.MIX) {
+    route.name && againActiveTop(route.name as string);
+  } else if (layout === LayoutEnum.TOP) {
+    appStore.openSideBar();
+  }
+}
+
+function againActiveTop(newVal: string) {
+  const parent = findOutermostParent(permissionStore.routes, newVal);
+  if (appStore.activeTopMenu !== parent.path) {
+    appStore.activeTopMenu(parent.path);
+  }
+}
+
+function findOutermostParent(tree: any[], findName: string) {
+  let parentMap: any = {};
+
+  function buildParentMap(node: any, parent: any) {
+    parentMap[node.name] = parent;
+
+    if (node.children) {
+      for (let i = 0; i < node.children.length; i++) {
+        buildParentMap(node.children[i], node);
       }
-    },
-    tagsView: {
-      get() {
-        return this.$store.state.settings.tagsView
-      },
-      set(val) {
-        this.$store.dispatch('settings/changeSetting', {
-          key: 'tagsView',
-          value: val
-        })
-      }
-    },
-    sidebarLogo: {
-      get() {
-        return this.$store.state.settings.sidebarLogo
-      },
-      set(val) {
-        this.$store.dispatch('settings/changeSetting', {
-          key: 'sidebarLogo',
-          value: val
-        })
-      }
-    }
-  },
-  created() {
-  },
-  mounted() {
-    if (localStorage.getItem('theme')) {
-      this.themeChange(localStorage.getItem('theme'))
-    }
-  },
-  methods: {
-    themeChange(val) {
-      this.$store.dispatch('settings/changeSetting', {
-        key: 'theme',
-        value: val
-      })
     }
   }
+
+  for (let i = 0; i < tree.length; i++) {
+    buildParentMap(tree[i], null);
+  }
+
+  let currentNode = parentMap[findName];
+  while (currentNode) {
+    if (!parentMap[currentNode.name]) {
+      return currentNode;
+    }
+    currentNode = parentMap[currentNode.name];
+  }
+
+  return null;
 }
 </script>
 
 <style lang="scss" scoped>
-.drawer-container {
-  padding: 24px;
-  font-size: 14px;
-  line-height: 1.5;
-  word-wrap: break-word;
-
-  .drawer-title {
-    margin-bottom: 12px;
-    color: rgba(0, 0, 0, .85);
-    font-size: 14px;
-    line-height: 22px;
-  }
-
-  .drawer-item {
-    color: rgba(0, 0, 0, .65);
-    font-size: 14px;
-    padding: 12px 0;
-  }
-
-  .drawer-switch {
-    float: right
-  }
-
-  .el-dropdown-link {
-    cursor: pointer;
-    color: #409EFF;
-  }
-  .el-icon-arrow-down {
-    font-size: 12px;
-  }
+.settings-option {
+  @apply py-1 flex-x-between;
 }
 </style>

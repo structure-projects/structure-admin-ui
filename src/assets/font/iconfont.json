@@ -1,0 +1,58 @@
+{
+  "id": "4191974",
+  "name": "vue3-home",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "5064100",
+      "name": "验收",
+      "font_class": "yanshou",
+      "unicode": "e648",
+      "unicode_decimal": 58952
+    },
+    {
+      "icon_id": "16728169",
+      "name": "服务",
+      "font_class": "fuwu",
+      "unicode": "e70f",
+      "unicode_decimal": 59151
+    },
+    {
+      "icon_id": "29163545",
+      "name": "dangyuanbangyang3.0zhdj",
+      "font_class": "ketangxiaobangyang",
+      "unicode": "e6bd",
+      "unicode_decimal": 59069
+    },
+    {
+      "icon_id": "31312997",
+      "name": "服务2",
+      "font_class": "fuwu2",
+      "unicode": "e61b",
+      "unicode_decimal": 58907
+    },
+    {
+      "icon_id": "31878446",
+      "name": "质量体系管理",
+      "font_class": "a-ziyuan22",
+      "unicode": "e62a",
+      "unicode_decimal": 58922
+    },
+    {
+      "icon_id": "918722",
+      "name": "爱心",
+      "font_class": "aixin",
+      "unicode": "e663",
+      "unicode_decimal": 58979
+    },
+    {
+      "icon_id": "4611765",
+      "name": "对勾",
+      "font_class": "duigou",
+      "unicode": "ebe6",
+      "unicode_decimal": 60390
+    }
+  ]
+}

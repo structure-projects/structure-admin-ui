@@ -1,0 +1,134 @@
+:root {
+    --bgcolor:#13c2c2;
+}
+html {
+    overflow-y: overlay;
+}
+html,body {
+    min-width: 1280px;
+    width: 100%;
+    height: 100%;
+}
+
+/* 页面头部 */
+.header {
+    height: 70px;
+}
+/* 固定定位 */
+.header-list {
+    position: fixed;
+    top:0;
+    left:0;
+    z-index: 99;
+    width: 100%;
+    height: 70px;
+    background-color: #fff;
+    box-shadow: 0 5px 5px rgba(0,0,0,.1);
+}
+.header-top {
+    width: 1280px;
+    height: 70px;
+    margin: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+/* logo  */
+.logo {
+    width: 200px;
+}
+.logo a {
+    background:url(../images/logo.png) no-repeat center center;
+    width: 180px;
+    height: 50px;
+    display: inline-block;
+    background-size: contain;
+}
+/* 头部导航 */
+.header-top ul {
+    flex: 1;
+    display: flex;
+}
+.header-menu li {
+    margin: 0 30px;
+    position: relative;
+}
+.header-menu li span {
+    font-size: 16px;
+    font-weight: 700;
+}
+.header-menu li span:hover {
+    color: var(--bgcolor);
+}
+/* 伪元素 */
+.header-menu li::before {
+    content:'';
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    width: 0;
+    height: 100%;
+    border-bottom: 3px solid var(--bgcolor);
+    transition: all 0.2s;
+}
+.header-menu li:hover::before {
+    content: '';
+    width: 100%;
+    left: 0;
+}
+/* 头部右侧 */
+.header-right {
+    display: flex;
+}
+.header-right-l {
+    /* background:url(../images/telt.png) no-repeat; */
+    width: 35px;
+    height: 35px;
+    margin-right: 10px;
+    /* -webkit-mask-box-image:url(../images/telt.png); */
+}
+.header-right-r p {
+    color: var(--bgcolor);
+    font-weight: 600;
+}
+.header-right-r-number {
+    font-size: 18px;
+}
+
+
+/* 底部 */
+.footer {
+    background-color:#333;
+    padding: 30px 0;
+}
+/* 版权 */
+.footer-copyright{
+  color: #f2f2f2;
+  text-align: center;
+}
+.footer-list {
+    width: 1280px;
+    margin:auto;
+    display: flex;
+    justify-content: space-between;
+}
+.footer-left ul {
+    display: flex;
+}
+.footer-left ul li {
+    width: 220px;
+}
+.footer-left ul li p {
+    color:#fff;
+    font-size: 16px;
+    line-height: 30px;
+}
+.footer-left ul li a {
+    display: block;
+    color: #a2a2a2;
+    line-height: 26px;
+}
+.footer-right {
+    width: 370px;
+    height:160px;
+}

@@ -1,418 +1,261 @@
 <template>
-  <div ref="loginContainer" class="login-container">
-    <div class="login-wp">
-      <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form" autocomplete="on" label-position="left">
+  <div class="login-container">
+    <!-- 顶部 -->
+    <div class="absolute-lt flex-x-end p-3 w-full">
+      <el-switch
+        v-model="isDark"
+        inline-prompt
+        :active-icon="Moon"
+        :inactive-icon="Sunny"
+        @change="toggleTheme"
+      />
+      <lang-select class="ml-2 cursor-pointer" />
+    </div>
+    <!-- 登录表单 -->
+    <el-card class="!border-none !bg-transparent !rounded-4% w-100 <sm:w-85">
+      <div class="text-center relative">
+        <h2>{{ defaultSettings.title }}</h2>
+        <!-- <el-tag class="ml-2 absolute-rt">{{ defaultSettings.version }}</el-tag> -->
+      </div>
 
+      <el-form
+        ref="loginFormRef"
+        :model="loginData"
+        :rules="loginRules"
+        class="login-form"
+      >
+        <!-- 用户名 -->
         <el-form-item prop="username">
-          <span class="svg-container">
-            <svg-icon icon-class="user" />
-          </span>
-          <el-input
-            ref="username"
-            v-model="loginForm.username"
-            placeholder="Username"
-            name="username"
-            type="text"
-            tabindex="1"
-            autocomplete="on"
-          />
+          <div class="flex-y-center w-full">
+            <svg-icon icon-class="user" class="mx-2" />
+            <el-input
+              ref="username"
+              v-model="loginData.username"
+              :placeholder="$t('login.username')"
+              name="username"
+              size="large"
+              class="h-[48px]"
+            />
+          </div>
         </el-form-item>
 
-        <el-tooltip v-model="capsTooltip" content="Caps lock is On" placement="right" manual>
+        <!-- 密码 -->
+        <el-tooltip
+          :visible="isCapslock"
+          content="Caps lock is On"
+          placement="right"
+        >
           <el-form-item prop="password">
-            <span class="svg-container">
-              <svg-icon icon-class="password" />
-            </span>
-            <el-input
-              :key="passwordType"
-              ref="password"
-              v-model="loginForm.password"
-              :type="passwordType"
-              placeholder="Password"
-              name="password"
-              tabindex="2"
-              autocomplete="on"
-              @keyup.native="checkCapslock"
-              @blur="capsTooltip = false"
-              @keyup.enter.native="handleLogin"
-            />
-            <span class="show-pwd" @click="showPwd">
-              <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'" />
-            </span>
+            <div class="flex-y-center w-full">
+              <el-icon class="mx-2"><Lock /></el-icon>
+              <el-input
+                v-model="loginData.password"
+                :placeholder="$t('login.password')"
+                type="password"
+                name="password"
+                @keyup="checkCapslock"
+                @keyup.enter="handleLogin"
+                size="large"
+                class="h-[48px] pr-2"
+                show-password
+              />
+            </div>
           </el-form-item>
         </el-tooltip>
-        <el-form-item prop="password">
-          <el-button class="login-btn" :loading="loading" type="primary" @click.native.prevent="handleLogin">登录</el-button>
-          <span class="more-auth">
-            <el-dropdown @command="showAuthCode">
-              <span class="el-dropdown-link">
-                <i class="el-icon-arrow-down el-icon--right" />
-              </span>
-              <el-dropdown-menu slot="dropdown">
-                <el-dropdown-item command="0">中心认证</el-dropdown-item>
-                <el-dropdown-item command="1">钉钉认证</el-dropdown-item>
-              </el-dropdown-menu>
-            </el-dropdown>
-          </span>
 
-        </el-form-item>
+        <!-- 登录按钮 -->
+        <el-button
+          :loading="loading"
+          type="primary"
+          size="large"
+          class="w-full"
+          @click.prevent="handleLogin"
+          >{{ $t("login.login") }}
+        </el-button>
+
+
       </el-form>
+    </el-card>
+
+    <!-- ICP备案 -->
+    <div class="absolute bottom-1 text-[10px] text-center" v-show="icpVisible">
+      <p>
+        Copyright © 2019 - 2024 yueyan.tech All Rights Reserved. 云商智慧
+        版权所有
+      </p>
+      <p>辽ICP备20006496号-1</p>
     </div>
-    <transition name="el-fade-in-linear">
-      <div v-show="tripartiteAuthVisible" ref="tripartiteAuth" class="tripartite-auth-container">
-        <div class="tripartite-auth-box">
-          <div class="tripartite-auth-title">{{ tripartiteAuth.title }}
-            <i class="el-icon-close tripartite-auth-close" @click="closeTripartiteAuth" />
-          </div>
-          <iframe class="tripartite-auth-code" :src="tripartiteAuth.url" scrolling="no" frameborder="0" />
-        </div>
-      </div>
-    </transition>
   </div>
 </template>
 
-<script>
-import { validUsername } from '@/utils/validate'
+<script setup lang="ts">
+import { useSettingsStore, useUserStore, useAppStore } from "@/store";
+import { LoginData } from "@/api/auth/types";
+import { Sunny, Moon } from "@element-plus/icons-vue";
+import { LocationQuery, LocationQueryValue, useRoute } from "vue-router";
+import router from "@/router";
+import defaultSettings from "@/settings";
+import { ThemeEnum } from "@/enums/ThemeEnum";
 
-export default {
-  name: 'Login',
-  data() {
-    const validateUsername = (rule, value, callback) => {
-      if (!validUsername(value)) {
-        callback(new Error('请输入用户名！'))
-      } else {
-        callback()
-      }
-    }
-    const validatePassword = (rule, value, callback) => {
-      if (value.length < 6) {
-        callback(new Error('密码不能少于6位！'))
-      } else {
-        callback()
-      }
-    }
-    return {
-      tripartiteAuthVisible: false,
-      tripartiteAuthList: [
-        { title: '中心认证',
-          url: '',
-          authType: 'center'
+// Stores
+const userStore = useUserStore();
+const settingsStore = useSettingsStore();
+const appStore = useAppStore();
+
+// Internationalization
+const { t } = useI18n();
+
+// Reactive states
+const isDark = ref(settingsStore.theme === ThemeEnum.DARK);
+const icpVisible = ref(true);
+const loading = ref(false); // 按钮loading
+const isCapslock = ref(false); // 是否大写锁定
+const captchaBase64 = ref(); // 验证码图片Base64字符串
+const loginFormRef = ref(ElForm); // 登录表单ref
+const { height } = useWindowSize();
+
+const loginData = ref<LoginData>({
+  username: "admin",
+  password: "123456",
+});
+
+const loginRules = computed(() => {
+  const prefix = appStore.language === "en" ? "Please enter " : "请输入";
+  return {
+    username: [
+      {
+        required: true,
+        trigger: "blur",
+        message: `${prefix}${t("login.username")}`,
+      },
+    ],
+    password: [
+      {
+        required: true,
+        trigger: "blur",
+        validator: (rule: any, value: any, callback: any) => {
+          if (value.length < 6) {
+            callback(new Error("The password can not be less than 6 digits"));
+          } else {
+            callback();
+          }
         },
-        { title: '钉钉认证',
-          url: 'https://login.dg-work.cn/oauth2/auth.htm?response_type=code&client_id=jz_oauth_dingoa&redirect_uri=http://127.0.0.1:8010/&scope=get_user_info&authType=QRCODE',
-          authType: 'dingding'
-        }
-      ],
-      tripartiteAuth: {},
-      loginForm: {
-        username: '',
-        password: ''
+        message: `${prefix}${t("login.password")}`,
       },
-      loginRules: {
-        username: [{ required: true, trigger: 'blur', validator: validateUsername }],
-        password: [{ required: true, trigger: 'blur', validator: validatePassword }]
+    ],
+    captchaCode: [
+      {
+        required: true,
+        trigger: "blur",
+        message: `${prefix}${t("login.captchaCode")}`,
       },
-      passwordType: 'password',
-      capsTooltip: false,
-      loading: false,
-      showDialog: false,
-      redirect: undefined,
-      otherQuery: {},
-      bgImg: sessionStorage.getItem('loginBg')
-    }
-  },
-  watch: {
-    $route: {
-      handler: function(route) {
-        const query = route.query
-        if (query) {
-          this.redirect = query.redirect
-          this.otherQuery = this.getOtherQuery(query)
-        }
-      },
-      immediate: true
-    }
-  },
-  created() {
+    ],
+  };
+});
 
-  },
-  mounted() {
-    if (this.loginForm.username === '') {
-      this.$refs.username.focus()
-    } else if (this.loginForm.password === '') {
-      this.$refs.password.focus()
-    }
-    this.bgImg = sessionStorage.getItem('loginBg')
-    if (this.bgImg) {
-      console.log('crate' + this.$refs.loginContainer)
-      this.$refs.loginContainer.style = "background-image: url('" + this.bgImg + "');"
-    }
-  },
-  destroyed() {
-    // window.removeEventListener('storage', this.afterQRScan)
-  },
-  updated() {
 
-  },
-  methods: {
-    checkCapslock(e) {
-      const { key } = e
-      this.capsTooltip = key && key.length === 1 && (key >= 'A' && key <= 'Z')
-    },
-    showPwd() {
-      if (this.passwordType === 'password') {
-        this.passwordType = ''
-      } else {
-        this.passwordType = 'password'
-      }
-      this.$nextTick(() => {
-        this.$refs.password.focus()
-      })
-    },
-    handleLogin() {
-      this.$refs.loginForm.validate(valid => {
-        if (valid) {
-          this.loading = true
-          this.loginForm.authType = 'password'
-          this.$store.dispatch('user/login', this.loginForm)
-            .then(() => {
-              this.$router.push({ path: this.redirect || '/', query: this.otherQuery })
-              this.loading = false
-            })
-            .catch(() => {
-              this.loading = false
-            })
-        } else {
-          console.log('error submit!!')
-          return false
-        }
-      })
-    },
-    showAuthCode(command) {
-      this.tripartiteAuth = this.tripartiteAuthList[command]
-      this.tripartiteAuthVisible = true
-    },
-    handleAuthCode() {
-      const authParams = {
-        authType: 'code',
-        code: 'aaa'
-      }
-      this.$store.dispatch('user/login', authParams)
+/**
+ * 登录
+ */
+const route = useRoute();
+function handleLogin() {
+  loginFormRef.value.validate((valid: boolean) => {
+    if (valid) {
+      loading.value = true;
+      userStore
+        .login(loginData.value)
         .then(() => {
-          this.$router.push({ path: this.redirect || '/', query: this.otherQuery })
-          this.loading = false
+          const query: LocationQuery = route.query;
+          const redirect = (query.redirect as LocationQueryValue) ?? "/";
+          const otherQueryParams = Object.keys(query).reduce(
+            (acc: any, cur: string) => {
+              if (cur !== "redirect") {
+                acc[cur] = query[cur];
+              }
+              return acc;
+            },
+            {}
+          );
+
+          router.push({ path: redirect, query: otherQueryParams });
         })
         .catch(() => {
-          this.loading = false
         })
-    },
-    closeTripartiteAuth() {
-      this.tripartiteAuthVisible = false
-    },
-    getOtherQuery(query) {
-      return Object.keys(query).reduce((acc, cur) => {
-        if (cur !== 'redirect') {
-          acc[cur] = query[cur]
-        }
-        return acc
-      }, {})
+        .finally(() => {
+          loading.value = false;
+        });
     }
-  }
+  });
 }
+
+/**
+ * 主题切换
+ */
+
+const toggleTheme = () => {
+  const newTheme =
+    settingsStore.theme === ThemeEnum.DARK ? ThemeEnum.LIGHT : ThemeEnum.DARK;
+  settingsStore.changeTheme(newTheme);
+};
+/**
+ * 根据屏幕宽度切换设备模式
+ */
+
+watchEffect(() => {
+  if (height.value < 600) {
+    icpVisible.value = false;
+  } else {
+    icpVisible.value = true;
+  }
+});
+
+/**
+ * 检查输入大小写
+ */
+function checkCapslock(e: any) {
+  isCapslock.value = e.getModifierState("CapsLock");
+}
+
+onMounted(() => {
+});
 </script>
 
-<style lang="scss">
-/* 修复input 背景不协调 和光标变色 */
-/* Detail see https://github.com/PanJiaChen/vue-element-admin/pull/927 */
-
-$bg:#283443;
-$light_gray:#fff;
-$cursor: #fff;
-
-@supports (-webkit-mask: none) and (not (cater-color: $cursor)) {
-  .login-container .el-input input {
-    color: $cursor;
-  }
-}
-
-/* reset element-ui css */
-.login-container {
-  .el-input {
-    display: inline-block;
-    position: relative;
-    width: 85%;
-    input {
-      background: transparent;
-      border: 0px;
-      -webkit-appearance: none;
-      border-radius: 0px;
-      // padding: 12px 5px 12px 15px;
-      color: $light_gray;
-      // height: 47px;
-      caret-color: $cursor;
-      font-size: 24px;
-
-      &:-webkit-autofill {
-        -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
-        background-color: transparent !important; //设置input框记住密码背景颜色
-        background-image: none;
-        transition: background-color 50000s ease-in-out 0s;
-        -webkit-text-fill-color: #fff !important; //设置浏览器默认密码字体颜色
-      }
-      &::-webkit-input-placeholder {
-        color: #fff !important;
-        font-size: 24px !important;
-      }
-    }
-  }
-
-  .el-form-item {
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 5px;
-    color: #454545;
-  }
-}
-</style>
-
 <style lang="scss" scoped>
-$bg: #2d3a4b;
-$dark_gray: #889aa4;
-$light_gray: #eee;
-::v-deep .el-form-item__content {
-  height: 72px !important;
-  line-height: 72px !important;
-}
-::v-deep .el-form-item__error {
-  font-size: 24px !important;
+html.dark .login-container {
+  background: url("@/assets/images/login-bg-dark.jpg") no-repeat center right;
 }
 
 .login-container {
-  min-height: 100%;
-  background-color: $bg;
-  width: 100%;
-  background-image: url("../../assets/login.jpeg");
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  overflow: hidden;
-  display: flex;
-  justify-content: flex-end;
-  .login-wp {
-    width: 642px;
-    min-height: 100%;
-    background: rgba(2, 77, 153, 0.25);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+  overflow-y: auto;
+  background: url("@/assets/images/login-bg.jpg") no-repeat center right;
+
+  @apply wh-full flex-center;
+
   .login-form {
-    width: 525px;
-    max-width: 100%;
-    overflow: hidden;
-    .el-form-item {
-      border: 1px solid rgba(255, 255, 255, 0.6);
-      border-bottom: 2px solid rgba(47, 160, 224, 0.6);
-      margin-bottom: 52px;
-    }
+    padding: 30px 10px;
   }
+}
 
-  .tips {
-    font-size: 14px;
-    color: #fff;
-    margin-bottom: 10px;
+.el-form-item {
+  background: var(--el-input-bg-color);
+  border: 1px solid var(--el-border-color);
+  border-radius: 5px;
+}
 
-    span {
-      &:first-of-type {
-        margin-right: 16px;
-      }
+:deep(.el-input) {
+  .el-input__wrapper {
+    padding: 0;
+    background-color: transparent;
+    box-shadow: none;
+
+    &.is-focus,
+    &:hover {
+      box-shadow: none !important;
     }
-  }
 
-  .svg-container {
-    padding: 0px 20px 6px 15px;
-    color: #ffffff;
-    vertical-align: middle;
-    width: 30px;
-    font-size: 24px;
-    display: inline-block;
-  }
-
-  .title-container {
-    position: relative;
-
-    .title {
-      font-size: 26px;
-      color: $light_gray;
-      margin: 0px auto 40px auto;
-      text-align: center;
-      font-weight: bold;
-    }
-  }
-
-  .show-pwd {
-    position: absolute;
-    right: 15px;
-    top: 0px;
-    font-size: 24px;
-    color: #ffffff;
-    cursor: pointer;
-    user-select: none;
-  }
-  .login-btn{
-    width: 100%;
-    height: 72px;
-    background-color: rgba(0, 144, 255, 1);
-    font-size: 30px;
-    font-weight: 400;
-    color: #ffffff;
-  }
-
-  .more-auth {
-    position: absolute;
-    right: 15px;
-    top: 0px;
-    font-size: 24px;
-    color: #ffffff;
-    cursor: pointer;
-    user-select: none;
-    .el-dropdown-link{
-      font-size: 24px;
-      color: #ffffff;
-    }
-  }
-
-  .tripartite-auth-container{
-    display:flex;
-    transform:translate(-50%,-50%);
-    position:absolute;
-    left: 50%;
-    top: 50%;
-    .tripartite-auth-box{
-      justify-content:center;
-      background-color: #fff;
-      width: 260px;
-      height: 300px;
-      border-radius: 5px;
-    }
-    .tripartite-auth-title{
-      width: 100%;
-      text-align: center;
-      top: 0px;
-      font-size: 24px;
-      padding-top: 10px;
-       position: relative;
-    }
-    .tripartite-auth-close{
-      position: absolute;
-      right: 15px;
-      cursor: pointer;
-    }
-    .tripartite-auth-code{
-      position:absolute;
-      padding: 20px;
-      width: 260px;
-      height: 260px;
-      margin: 0;
+    input:-webkit-autofill {
+      /* 通过延时渲染背景色变相去除背景颜色 */
+      transition: background-color 1000s ease-in-out 0s;
     }
   }
 }

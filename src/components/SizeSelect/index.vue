@@ -1,57 +1,35 @@
 <template>
-  <el-dropdown trigger="click" @command="handleSetSize">
+  <el-dropdown trigger="click" @command="handleSizeChange">
     <div>
-      <svg-icon class-name="size-icon" icon-class="size" />
+      <svg-icon icon-class="size" />
     </div>
-    <el-dropdown-menu slot="dropdown">
-      <el-dropdown-item v-for="item of sizeOptions" :key="item.value" :disabled="size===item.value" :command="item.value">
-        {{
-          item.label }}
-      </el-dropdown-item>
-    </el-dropdown-menu>
+    <template #dropdown>
+      <el-dropdown-menu>
+        <el-dropdown-item
+          v-for="item of sizeOptions"
+          :key="item.value"
+          :disabled="appStore.size == item.value"
+          :command="item.value"
+        >
+          {{ item.label }}
+        </el-dropdown-item>
+      </el-dropdown-menu>
+    </template>
   </el-dropdown>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      sizeOptions: [
-        { label: '默认', value: 'default' },
-        { label: '中等', value: 'medium' },
-        { label: '小的', value: 'small' },
-        { label: '最小', value: 'mini' }
-      ]
-    }
-  },
-  computed: {
-    size() {
-      return this.$store.getters.size
-    }
-  },
-  methods: {
-    handleSetSize(size) {
-      this.$ELEMENT.size = size
-      this.$store.dispatch('app/setSize', size)
-      this.refreshView()
-      this.$message({
-        message: 'Switch Size Success',
-        type: 'success'
-      })
-    },
-    refreshView() {
-      // In order to make the cached page re-rendered
-      this.$store.dispatch('tagsView/delAllCachedViews', this.$route)
+<script setup lang="ts">
+import { useAppStore } from "@/store/modules/app";
 
-      const { fullPath } = this.$route
+const sizeOptions = ref([
+  { label: "默认", value: "default" },
+  { label: "大型", value: "large" },
+  { label: "小型", value: "small" },
+]);
 
-      this.$nextTick(() => {
-        this.$router.replace({
-          path: '/redirect' + fullPath
-        })
-      })
-    }
-  }
-
+const appStore = useAppStore();
+function handleSizeChange(size: string) {
+  appStore.changeSize(size);
+  ElMessage.success("切换布局大小成功");
 }
 </script>
