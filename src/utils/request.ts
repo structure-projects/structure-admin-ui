@@ -9,7 +9,7 @@ const service = axios.create({
     "X-ORGANIZATION_ID":1
   },
 });
-
+console.log(import.meta.env.VITE_APP_BASE_API,)
 // 请求拦截器
 service.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
