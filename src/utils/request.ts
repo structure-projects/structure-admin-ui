@@ -45,7 +45,7 @@ service.interceptors.response.use(
     if (error.response.data) {
       const { code, msg } = error.response.data;
       // token 过期,重新登录
-      if (code === "A0230") {
+      if (code === "INVALID_AUTHENTICATION" || code === "NOT_LOGGED_IN" ) {
         ElMessageBox.confirm("当前页面已失效，请重新登录", "提示", {
           confirmButtonText: "确定",
           cancelButtonText: "取消",
