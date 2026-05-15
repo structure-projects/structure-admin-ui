@@ -1,7 +1,7 @@
 <script setup lang="ts">
 defineOptions({
   name: "Config",
-  inheritAttrs: false,
+  inheritAttrs: false
 });
 
 /**
@@ -15,7 +15,11 @@ import {
   deleteConfig
 } from "@/api/system/config";
 
-import { ConfigQuery, Config, ConfigPageResult } from "@/api/system/config/types";
+import {
+  ConfigQuery,
+  Config,
+  ConfigPageResult
+} from "@/api/system/config/types";
 
 const queryFormRef = ref(ElForm);
 const configFormRef = ref(ElForm);
@@ -27,8 +31,7 @@ const total = ref(0);
 /**
  * 查询的参数
  */
-const queryParams = reactive<ConfigQuery>({
-})
+const queryParams = reactive<ConfigQuery>({});
 
 /**
  * 分页参数
@@ -47,18 +50,17 @@ const configList = ref<Config[]>();
  * dialog 数据定义
  */
 const dialog = reactive<DialogType>({
-  visible: false,
+  visible: false
 });
 
 /**
  * 表单数据定义
  */
-const formData = reactive<Config>({
-});
+const formData = reactive<Config>({});
 
 const rules = reactive({
   key: [{ required: true, message: "请输入配置编码", trigger: "blur" }],
-  value: [{ required: true, message: "请输入配置值", trigger: "blur" }],
+  value: [{ required: true, message: "请输入配置值", trigger: "blur" }]
 });
 
 const menuDialogVisible = ref(false);
@@ -172,7 +174,7 @@ function handleDelete(configId?: number) {
   ElMessageBox.confirm("确认删除已选中的数据项?", "警告", {
     confirmButtonText: "确定",
     cancelButtonText: "取消",
-    type: "warning",
+    type: "warning"
   }).then(() => {
     loading.value = true;
     deleteConfig(configIds)
@@ -194,49 +196,108 @@ onMounted(() => {
     <div class="search-container">
       <el-form ref="queryFormRef" :model="queryParams" :inline="true">
         <el-form-item prop="keywords" label="关键字">
-          <el-input v-model="queryParams.keywords" placeholder="配置名称" clearable @keyup.enter="handleQuery" />
+          <el-input
+            v-model="queryParams.keywords"
+            placeholder="配置名称"
+            clearable
+            @keyup.enter="handleQuery"
+          />
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" @click="handleQuery"><i-ep-search />搜索</el-button>
-          <el-button @click="resetQuery"><i-ep-refresh />重置</el-button>
+          <el-button type="primary" @click="handleQuery">
+            <i-ep-search />
+            搜索
+          </el-button>
+          <el-button @click="resetQuery">
+            <i-ep-refresh />
+            重置
+          </el-button>
         </el-form-item>
       </el-form>
     </div>
 
     <el-card shadow="never">
       <template #header>
-        <el-button type="primary" @click="openDialog()"><i-ep-plus />新增</el-button>
-        <el-button type="danger" :disabled="ids.length === 0" @click="handleDelete()"><i-ep-delete />删除</el-button>
+        <el-button type="primary" @click="openDialog()">
+          <i-ep-plus />
+          新增
+        </el-button>
+        <el-button
+          type="danger"
+          :disabled="ids.length === 0"
+          @click="handleDelete()"
+        >
+          <i-ep-delete />
+          删除
+        </el-button>
       </template>
 
-      <el-table ref="dataTableRef" v-loading="loading" :data="configList" highlight-current-row border
-        @selection-change="handleSelectionChange">
+      <el-table
+        ref="dataTableRef"
+        v-loading="loading"
+        :data="configList"
+        highlight-current-row
+        border
+        @selection-change="handleSelectionChange"
+      >
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column label="配置编码" prop="key" min-width="100" />
-        <el-table-column label="配置值" prop="value" width="150" />
+        <el-table-column label="配置值" prop="value" min-width="100" />
 
-        <el-table-column label="描述" prop="remark" align="center" width="150" />
+        <el-table-column
+          label="描述"
+          prop="remark"
+          align="center"
+          min-width="100"
+        />
 
         <el-table-column fixed="right" label="操作" width="220">
           <template #default="scope">
-            <el-button type="primary" size="small" link @click="openDialog(scope.row.id)">
-              <i-ep-edit />编辑
+            <el-button
+              type="primary"
+              size="small"
+              link
+              @click="openDialog(scope.row.id)"
+            >
+              <i-ep-edit />
+              编辑
             </el-button>
-            <el-button type="primary" size="small" link @click="handleDelete(scope.row.id)">
-              <i-ep-delete />删除
+            <el-button
+              type="primary"
+              size="small"
+              link
+              @click="handleDelete(scope.row.id)"
+            >
+              <i-ep-delete />
+              删除
             </el-button>
           </template>
         </el-table-column>
       </el-table>
 
-      <pagination v-if="total > 0" v-model:total="total" v-model:page="pageQueryParams.page"
-        v-model:limit="pageQueryParams.pageSize" @pagination="handleQuery" />
+      <pagination
+        v-if="total > 0"
+        v-model:total="total"
+        v-model:page="pageQueryParams.page"
+        v-model:limit="pageQueryParams.pageSize"
+        @pagination="handleQuery"
+      />
     </el-card>
 
     <!-- 配置表单弹窗 -->
-    <el-dialog v-model="dialog.visible" :title="dialog.title" width="500px" @close="closeDialog">
-      <el-form ref="configFormRef" :model="formData" :rules="rules" label-width="100px">
+    <el-dialog
+      v-model="dialog.visible"
+      :title="dialog.title"
+      width="500px"
+      @close="closeDialog"
+    >
+      <el-form
+        ref="configFormRef"
+        :model="formData"
+        :rules="rules"
+        label-width="100px"
+      >
         <el-form-item label="配置编码" prop="key">
           <el-input v-model="formData.key" placeholder="请输入配置编码" />
         </el-form-item>
@@ -246,8 +307,12 @@ onMounted(() => {
         </el-form-item>
 
         <el-form-item label="配置描述" prop="remark">
-          <el-input v-model="formData.remark" type="textarea" placeholder="配置描述"
-            :autosize="{ minRows: 2, maxRows: 4 }" />
+          <el-input
+            v-model="formData.remark"
+            type="textarea"
+            placeholder="配置描述"
+            :autosize="{ minRows: 2, maxRows: 4 }"
+          />
         </el-form-item>
       </el-form>
 

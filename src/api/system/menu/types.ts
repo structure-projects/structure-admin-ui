@@ -128,3 +128,57 @@ export interface MenuForm {
    */
   alwaysShow?: number;
 }
+
+/**
+ * 静态路由导入菜单载荷
+ */
+export interface StaticMenuImportItem {
+  /**
+   * 功能编号
+   */
+  code?: string;
+  /**
+   * 菜单名称
+   */
+  name: string;
+  /**
+   * 菜单类型
+   */
+  type: MenuTypeEnum;
+  /**
+   * 路由路径
+   */
+  path: string;
+  /**
+   * 组件路径
+   */
+  component?: string;
+  /**
+   * 图标
+   */
+  icon?: string;
+  /**
+   * 显示状态(1:显示 0:隐藏)
+   */
+  visible: number;
+  /**
+   * 排序
+   */
+  sort: number;
+  /**
+   * 重定向
+   */
+  redirect?: string;
+  /**
+   * 缓存
+   */
+  keepAlive?: number;
+  /**
+   * 始终显示
+   */
+  alwaysShow?: number;
+  /**
+   * 子菜单
+   */
+  children?: StaticMenuImportItem[];
+}

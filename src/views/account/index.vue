@@ -7,7 +7,7 @@
             <template #header>
               <div class="account-center-avatarHolder">
                 <div class="avatar">
-                  <img :src="userDetail.avatar">
+                  <img :src="userDetail.avatar" />
                 </div>
                 <div class="username">{{ userDetail.nickname }}</div>
                 <div class="intro">{{ userDetail.intro }}</div>
@@ -17,23 +17,27 @@
 
               <div class="account-center-detail">
                 <el-divider />
-                <p><el-icon>
+                <p>
+                  <el-icon>
                     <Iphone />
                   </el-icon>
                   <span>{{ userDetail.phone }}</span>
                 </p>
-                <p><el-icon>
+                <p>
+                  <el-icon>
                     <Message />
                   </el-icon>
                   <span>{{ userDetail.email }}</span>
                 </p>
-                <p> <svg-icon icon-class='tree' />
-                  <span>{{ deptInfo }}</span>
-                </p>
+
                 <p>
                   <svg-icon icon-class="role" />
                   <span>
-                    <el-tag v-for="tag in userDetail.role " :key="tag" :disable-transitions="false">
+                    <el-tag
+                      v-for="tag in userDetail.role"
+                      :key="tag"
+                      :disable-transitions="false"
+                    >
                       {{ tag.label }}
                     </el-tag>
                   </span>
@@ -45,10 +49,17 @@
           </el-card>
         </el-col>
         <el-col :span="18">
-          <el-card v-loading="loading" style=" padding: '16px 0';max-width: 100% ; height: 100%">
+          <el-card
+            v-loading="loading"
+            style="padding: &quot;16px 0&quot;; max-width: 100%; height: 100%"
+          >
             <el-tabs v-model="activeName" @tab-click="handleClick">
-              <el-tab-pane label="基本设置" name="basic-setting"><basic-setting /></el-tab-pane>
-              <el-tab-pane label="帐号绑定" name="bind"><account-bind /></el-tab-pane>
+              <el-tab-pane label="基本设置" name="basic-setting">
+                <basic-setting />
+              </el-tab-pane>
+              <el-tab-pane label="帐号绑定" name="bind">
+                <account-bind />
+              </el-tab-pane>
             </el-tabs>
           </el-card>
         </el-col>
@@ -58,45 +69,37 @@
 </template>
 
 <script lang="ts" setup>
-import {
-  useUserStore
-} from "@/store";
-import { getUserDetailApi } from '@/api/system/user'
-import { getMemberDeptTree } from '@/api/system/member'
-import type { UserDetail } from '@/api/system/user/types'
-import type { TabsPaneContext } from 'element-plus'
-import { Purse } from './components/PurseAccount.vue'
-import { TeamData } from './components/Team.vue'
-const userStore = useUserStore()
+import { useUserStore } from "@/store";
+import { getUserDetailApi } from "@/api/system/user";
+import type { UserDetail } from "@/api/system/user/types";
+import type { TabsPaneContext } from "element-plus";
+import { Purse } from "./components/PurseAccount.vue";
+import { TeamData } from "./components/Team.vue";
+const userStore = useUserStore();
 const loading = ref(false);
-const deptInfo = ref<string>('');
+const deptInfo = ref<string>("");
 const userDetail = ref<UserDetail>({});
 const capitalAccount = ref<Purse>();
 const teams = ref<TeamData[]>();
-const activeName = ref('basic-setting')
+const activeName = ref("basic-setting");
 
 const handleClick = (tab: TabsPaneContext, event: Event) => {
   // console.log(tab, event)
-}
+};
 
 function handleGetUserInfo() {
   loading.value = true;
   getUserDetailApi()
-    .then((data) => {
+    .then(data => {
       userDetail.value = data.data;
-    }).finally(() => {
+    })
+    .finally(() => {
       loading.value = false;
-    });
-  getMemberDeptTree(userStore.user.id)
-    .then((data) => {
-      deptInfo.value = data.data;
-    }).finally(() => {
     });
 }
 onMounted(() => {
   handleGetUserInfo();
 });
-
 </script>
 
 <style>
@@ -122,7 +125,7 @@ onMounted(() => {
     text-align: center;
     margin-bottom: 24px;
 
-    &>.avatar {
+    & > .avatar {
       margin: 0 auto;
       width: 104px;
       height: 104px;
