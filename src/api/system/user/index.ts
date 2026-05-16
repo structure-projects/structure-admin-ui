@@ -6,7 +6,8 @@ import {
   UserQuery,
   UserPageVO,
   UserForm,
-  UserPageResult
+  UserPageResult,
+  ChangePasswordDTO
 } from "./types";
 
 /**
@@ -55,8 +56,56 @@ export function getUserPage(
  */
 export function getUserById(id: number): AxiosPromise<UserDetail> {
   return request({
-    url: "/api/users/" + id,
+    url: "/api/users/get/" + id,
     method: "get"
+  });
+}
+
+/**
+ * 启用用户
+ *
+ * @param id
+ */
+export function enableUser(id: number) {
+  return request({
+    url: "/api/users/enable/" + id,
+    method: "put"
+  });
+}
+
+/**
+ * 停用用户
+ *
+ * @param id
+ */
+export function disableUser(id: number) {
+  return request({
+    url: "/api/users/disable/" + id,
+    method: "put"
+  });
+}
+
+/**
+ * 锁定用户
+ *
+ * @param id
+ */
+export function lockUser(id: number) {
+  return request({
+    url: "/api/users/lock/" + id,
+    method: "put"
+  });
+}
+
+/**
+ * 解锁用户
+ *
+ * @param id
+ */
+export function unlockUser(id: number) {
+  return request({
+    url: "/api/users/unlock/" + id,
+    method: "put"
   });
 }
 
@@ -113,5 +162,30 @@ export function updateUserPassword(id: number, password: string) {
       userId: id,
       password: password
     }
+  });
+}
+
+/**
+ * 分配角色
+ *
+ * @param roleIds 角色ID集合
+ * @param userId 用户ID
+ */
+export function assigningRole(roleIds: number[], userId: number) {
+  return request({
+    url: "/api/users/assigningRole",
+    method: "put",
+    data: {
+      roleIds: roleIds,
+      userId: userId
+    }
+  });
+}
+
+export function changeCurrentPassword(data: ChangePasswordDTO) {
+  return request({
+    url: "/api/users/changeCurrentPassword",
+    method: "post",
+    data: data
   });
 }

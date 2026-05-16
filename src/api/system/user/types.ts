@@ -143,3 +143,9 @@ export interface UserDetail {
 }
 
 export type UserPageResult = PageResult<UserPageVO[]>;
+
+export interface ChangePasswordDTO {
+  userId?: number;
+  oldPassword: string;
+  newPassword: string;
+}

@@ -26,41 +26,51 @@ service.interceptors.request.use(
   }
 );
 
-// 响应拦截器
 service.interceptors.response.use(
   (response: AxiosResponse) => {
-    const { code, msg ,success} = response.data;
-    if (success == true) {
-      return response.data;
-    }
-    // 响应数据为二进制流处理(Excel导出)
+    const { code, msg, message, success } = response.data;
+    const errorMsg = msg || message || "系统出错";
+    
     if (response.data instanceof ArrayBuffer) {
       return response;
     }
 
-    ElMessage.error(msg || "系统出错");
-    return Promise.reject(new Error(msg || "Error"));
+    if (success === true || response.data.code === undefined) {
+      return response.data;
+    }
+
+    ElMessage.error(errorMsg);
+    return Promise.reject(new Error(errorMsg));
   },
   (error: any) => {
-    if (error.response.data) {
-      const { code, msg } = error.response.data;
-      // token 过期,重新登录
-      if (code === "INVALID_AUTHENTICATION" || code === "NOT_LOGGED_IN" ) {
-        ElMessageBox.confirm("当前页面已失效，请重新登录", "提示", {
-          confirmButtonText: "确定",
-          cancelButtonText: "取消",
-          type: "warning",
-        }).then(() => {
-          const userStore = useUserStoreHook();
-          userStore.resetToken().then(() => {
-            location.reload();
+    let errorMsg = "系统出错";
+    
+    if (error.response) {
+      const { data } = error.response;
+      if (data) {
+        const { code, msg, message } = data;
+        errorMsg = msg || message || errorMsg;
+        
+        if (code === "INVALID_AUTHENTICATION" || code === "NOT_LOGGED_IN") {
+          ElMessageBox.confirm("当前页面已失效，请重新登录", "提示", {
+            confirmButtonText: "确定",
+            cancelButtonText: "取消",
+            type: "warning",
+          }).then(() => {
+            const userStore = useUserStoreHook();
+            userStore.resetToken().then(() => {
+              location.reload();
+            });
           });
-        });
-      } else {
-        ElMessage.error(msg || "系统出错");
+          return Promise.reject(new Error("认证失效"));
+        }
       }
+    } else if (error.message) {
+      errorMsg = error.message;
     }
-    return Promise.reject(error.message);
+
+    ElMessage.error(errorMsg);
+    return Promise.reject(new Error(errorMsg));
   }
 );
 

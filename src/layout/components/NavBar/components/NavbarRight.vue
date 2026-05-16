@@ -1,21 +1,17 @@
 <template>
   <div class="flex">
     <template v-if="device !== 'mobile'">
-      <!--全屏 -->
       <div class="setting-item" @click="toggle">
         <svg-icon :icon-class="isFullscreen ? 'fullscreen-exit' : 'fullscreen'" />
       </div>
 
-      <!-- 布局大小 -->
       <el-tooltip content="布局大小" effect="dark" placement="bottom">
         <size-select class="setting-item" />
       </el-tooltip>
 
-      <!-- 语言选择 -->
       <lang-select class="setting-item" />
     </template>
 
-    <!-- 用户头像 -->
     <el-dropdown class="setting-item" trigger="click">
       <div class="flex-center h100% p10px">
         <img :src="userStore.user.avatar + '?imageView2/1/w/80/h/80'" class="rounded-full mr-10px w24px w24px" />
@@ -27,6 +23,9 @@
             <router-link to="/account">
               个人中心
             </router-link>
+          </el-dropdown-item>
+          <el-dropdown-item @click="showChangePassword = true">
+            修改密码
           </el-dropdown-item>
           <a target="_blank" href="https://github.com/structure-projects/structure-admin">
             <el-dropdown-item divided>项目地址</el-dropdown-item>
@@ -41,15 +40,17 @@
       </template>
     </el-dropdown>
 
-    <!-- 设置 -->
     <template v-if="defaultSettings.showSettings">
       <div class="setting-item" @click="settingStore.settingsVisible = true">
         <svg-icon icon-class="setting" />
       </div>
     </template>
   </div>
+
+  <ChangePassword v-model:visible="showChangePassword" />
 </template>
 <script setup lang="ts">
+import { ref } from "vue";
 import {
   useAppStore,
   useTagsViewStore,
@@ -57,6 +58,7 @@ import {
   useSettingsStore,
 } from "@/store";
 import defaultSettings from "@/settings";
+import ChangePassword from "@/views/account/components/ChangePassword.vue";
 
 const appStore = useAppStore();
 const tagsViewStore = useTagsViewStore();
@@ -66,10 +68,11 @@ const settingStore = useSettingsStore();
 const route = useRoute();
 const router = useRouter();
 
-// 设备类型：desktop-宽屏设备 || mobile-窄屏设备
 const device = computed(() => appStore.device);
 
 const { isFullscreen, toggle } = useFullscreen();
+
+const showChangePassword = ref(false);
 
 /**
  * 注销

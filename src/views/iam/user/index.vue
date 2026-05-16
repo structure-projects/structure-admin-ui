@@ -11,7 +11,12 @@ import {
   getUserById,
   deleteUser,
   addUser,
-  updateUserPassword
+  updateUserPassword,
+  enableUser,
+  disableUser,
+  lockUser,
+  unlockUser,
+  assigningRole
 } from "@/api/system/user";
 import { getRoleOptions } from "@/api/system/role";
 
@@ -49,6 +54,17 @@ const dialog = reactive({
   type: "user-form",
   width: 1200,
   title: ""
+});
+
+const assignRoleDialog = reactive({
+  visible: false,
+  title: "分配角色",
+  width: 600,
+  userId: undefined
+});
+
+const assignRoleFormData = reactive({
+  roleIds: [] as number[]
 });
 
 // 用户表单数据
@@ -105,20 +121,21 @@ function handleSelectionChange(selection: any) {
 
 /**重置密码 */
 function resetPassword(row: { [key: string]: any }) {
-  ElMessageBox.prompt("请输入用户「" + row.name + "」的新密码", "重置密码", {
-    confirmButtonText: "确定",
-    cancelButtonText: "取消"
-  })
-    .then(({ value }) => {
-      if (!value) {
-        ElMessage.warning("请输入新密码");
-        return false;
-      }
-      updateUserPassword(row.id, value).then(() => {
-        ElMessage.success("密码重置成功，新密码是：" + value);
-      });
-    })
-    .catch(() => {});
+  const username = row.username || row.name || '';
+  ElMessageBox.confirm(
+    `确认重置用户「${username}」的密码？重置后系统将自动生成新密码并通过邮件/短信通知用户。`,
+    '重置密码',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(() => {
+    updateUserPassword(row.id, '').then(() => {
+      ElMessage.success('密码重置成功，新密码已发送至用户邮箱/手机');
+      resetQuery();
+    });
+  }).catch(() => {});
 }
 
 /** 加载角色下拉数据源 */
@@ -221,6 +238,70 @@ function handleDelete(id?: number) {
       ElMessage.success("删除成功");
       resetQuery();
     });
+  });
+}
+
+/** 处理启用状态变化 */
+function handleEnabledChange(row: any, value: boolean) {
+  const action = value ? "启用" : "停用";
+  ElMessageBox.confirm(`确认${action}用户「${row.username}」?`, "警告", {
+    confirmButtonText: "确定",
+    cancelButtonText: "取消",
+    type: "warning"
+  }).then(function () {
+    (value ? enableUser : disableUser)(row.id).then(() => {
+      ElMessage.success(`${action}成功`);
+      resetQuery();
+    }).catch(() => {
+      row.enabled = !value;
+    });
+  }).catch(() => {
+    row.enabled = !value;
+  });
+}
+
+/** 处理锁定状态变化 */
+function handleUnlockedChange(row: any, value: boolean) {
+  const action = value ? "锁定" : "解锁";
+  const actualValue = !value;
+  ElMessageBox.confirm(`确认${action}用户「${row.username}」?`, "警告", {
+    confirmButtonText: "确定",
+    cancelButtonText: "取消",
+    type: "warning"
+  }).then(function () {
+    (actualValue ? lockUser : unlockUser)(row.id).then(() => {
+      ElMessage.success(`${action}成功`);
+      resetQuery();
+    }).catch(() => {
+      row.unlocked = value;
+    });
+  }).catch(() => {
+    row.unlocked = value;
+  });
+}
+
+function openAssignRoleDialog(row: any) {
+  assignRoleDialog.visible = true;
+  assignRoleDialog.userId = row.id;
+  assignRoleFormData.roleIds = row.roleIds ? [...row.roleIds] : [];
+  loadRoleOptions();
+}
+
+function closeAssignRoleDialog() {
+  assignRoleDialog.visible = false;
+  assignRoleFormData.roleIds = [];
+  assignRoleDialog.userId = undefined;
+}
+
+function handleAssignRole() {
+  if (!assignRoleFormData.roleIds || assignRoleFormData.roleIds.length === 0) {
+    ElMessage.warning("请选择角色");
+    return;
+  }
+  assigningRole(assignRoleFormData.roleIds, assignRoleDialog.userId).then(() => {
+    ElMessage.success("角色分配成功");
+    closeAssignRoleDialog();
+    resetQuery();
   });
 }
 
@@ -365,8 +446,9 @@ onMounted(() => {
           <template #default="scope">
             <el-switch
               v-model="scope.row.enabled"
-              :inactive-value="0"
-              :active-value="1"
+              :inactive-value="false"
+              :active-value="true"
+              @change="(val) => handleEnabledChange(scope.row, val)"
             />
           </template>
         </el-table-column>
@@ -379,8 +461,9 @@ onMounted(() => {
           <template #default="scope">
             <el-switch
               v-model="scope.row.unlocked"
-              :inactive-value="0"
-              :active-value="1"
+              :inactive-value="true"
+              :active-value="false"
+              @change="(val) => handleUnlockedChange(scope.row, val)"
             />
           </template>
         </el-table-column>
@@ -404,9 +487,8 @@ onMounted(() => {
           prop="createTime"
           width="240"
         />
-        <el-table-column label="操作" fixed="right" width="220">
+        <el-table-column label="操作" fixed="right" width="320">
           <template #default="scope">
-            <!--   v-hasPerm="['sys:user:reset_pwd']" -->
             <el-button
               v-hasPerm="['sys:user:reset_pwd']"
               type="primary"
@@ -428,6 +510,18 @@ onMounted(() => {
               <i-ep-edit />
               编辑
             </el-button>
+
+            <el-button
+              v-hasPerm="['sys:user:assignRole']"
+              type="primary"
+              link
+              size="small"
+              @click="openAssignRoleDialog(scope.row)"
+            >
+              <i-ep-user />
+              分配角色
+            </el-button>
+
             <el-button
               v-hasPerm="['sys:user:del']"
               type="primary"
@@ -492,7 +586,38 @@ onMounted(() => {
         </el-form-item>
 
         <el-form-item label="角色" prop="roleIds">
-          <el-select v-model="formData.roleIds" multiple placeholder="请选择">
+          <el-select v-model="formData.roleIds" multiple placeholder="请选择" :disabled="!!formData.id">
+            <el-option
+              v-for="item in roleList"
+              :key="item.id"
+              :label="item.label"
+              :value="item.id"
+            />
+          </el-select>
+          <span v-if="!!formData.id" class="text-gray-400 text-sm ml-2">如需修改角色，请使用"分配角色"功能</span>
+        </el-form-item>
+      </el-form>
+
+      <!-- 弹窗底部操作按钮 -->
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="handleSubmit">确 定</el-button>
+          <el-button @click="closeDialog">取 消</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 分配角色弹窗 -->
+    <el-dialog
+      v-model="assignRoleDialog.visible"
+      :title="assignRoleDialog.title"
+      :width="assignRoleDialog.width"
+      append-to-body
+      @close="closeAssignRoleDialog"
+    >
+      <el-form label-width="80px">
+        <el-form-item label="角色">
+          <el-select v-model="assignRoleFormData.roleIds" multiple placeholder="请选择角色" style="width: 100%">
             <el-option
               v-for="item in roleList"
               :key="item.id"
@@ -503,11 +628,10 @@ onMounted(() => {
         </el-form-item>
       </el-form>
 
-      <!-- 弹窗底部操作按钮 -->
       <template #footer>
         <div class="dialog-footer">
-          <el-button type="primary" @click="handleSubmit">确 定</el-button>
-          <el-button @click="closeDialog">取 消</el-button>
+          <el-button type="primary" @click="handleAssignRole">确 定</el-button>
+          <el-button @click="closeAssignRoleDialog">取 消</el-button>
         </div>
       </template>
     </el-dialog>

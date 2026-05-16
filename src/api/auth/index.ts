@@ -1,6 +1,6 @@
 import request from "@/utils/request";
 import { AxiosPromise } from "axios";
-import { LoginData, LoginResult } from "./types";
+import { LoginData, LoginResult, CaptchaDTO } from "./types";
 
 /**
  * 登录API
@@ -34,5 +34,17 @@ export function logoutApi() {
   return request({
     url: "/api/user/logout",
     method: "post",
+  });
+}
+
+/**
+ * 生成验证码API
+ *
+ * @returns
+ */
+export function generateCaptcha(): AxiosPromise<CaptchaDTO> {
+  return request({
+    url: "/api/captcha/generate",
+    method: "get",
   });
 }
