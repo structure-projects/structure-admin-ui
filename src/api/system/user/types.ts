@@ -13,10 +13,11 @@ export interface UserInfo {
 /**
  * 用户查询对象类型
  */
-export interface UserQuery  {
+export interface UserQuery {
   keywords?: string;
-  status?: number;
-  deptId?: number;
+  enabled?: number;
+  unlocked?: number;
+  unexpired?: number;
 }
 
 /**
@@ -31,10 +32,7 @@ export interface UserPageVO {
    * 创建时间
    */
   createTime?: Date;
-  /**
-   * 部门名称
-   */
-  deptName?: string;
+
   /**
    * 用户邮箱
    */
@@ -42,7 +40,7 @@ export interface UserPageVO {
   /**
    * 性别
    */
-  genderLabel?: string;
+  sex?: string;
   /**
    * 用户ID
    */
@@ -50,7 +48,7 @@ export interface UserPageVO {
   /**
    * 手机号
    */
-  mobile?: string;
+  phone?: string;
   /**
    * 用户昵称
    */
@@ -67,6 +65,26 @@ export interface UserPageVO {
    * 用户名
    */
   username?: string;
+
+  /**
+   * 操作人
+   */
+  operator?: string;
+
+  /**
+   * 是否启用
+   */
+  enabled?: boolean;
+
+  /**
+   * 是否锁定
+   */
+  unlocked?: boolean;
+
+  /**
+   * 是否过期
+   */
+  unexpired?: boolean;
 }
 
 /**
@@ -77,23 +95,21 @@ export interface UserForm {
    * 用户头像
    */
   avatar?: string;
-  /**
-   * 部门ID
-   */
-  deptId?: number;
+
   /**
    * 邮箱
    */
   email?: string;
-  /**
-   * 性别
-   */
-  gender?: number;
+
   /**
    * 用户ID
    */
   id?: number;
-  mobile?: string;
+
+  /**
+   * 手机号
+   */
+  phone?: string;
   /**
    * 昵称
    */
@@ -102,17 +118,19 @@ export interface UserForm {
    * 角色ID集合
    */
   roleIds?: number[];
-  /**
-   * 用户状态(1:正常;0:禁用)
-   */
-  status?: number;
+
   /**
    * 用户名
    */
   username?: string;
+
+  /**
+   * 性别
+   */
+  sex?: string;
 }
 
-export interface UserDetail{
+export interface UserDetail {
   id?: number;
   username?: string;
   nickname?: string;
@@ -122,4 +140,12 @@ export interface UserDetail{
   intro?: string;
   phone?: string;
   email?: string;
+}
+
+export type UserPageResult = PageResult<UserPageVO[]>;
+
+export interface ChangePasswordDTO {
+  userId?: number;
+  oldPassword: string;
+  newPassword: string;
 }

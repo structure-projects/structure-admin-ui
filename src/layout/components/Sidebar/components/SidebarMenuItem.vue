@@ -94,9 +94,14 @@ function hasOneShowingChild(
       // 过滤不显示的子路由
       return false;
     } else {
-      route.meta!.hidden = false;
-      // 临时变量（多个子路由 onlyOneChild 变量是用不上的）
-      onlyOneChild.value = route;
+      // 部分路由可能没有 meta，这里兜底避免白屏
+      onlyOneChild.value = {
+        ...route,
+        meta: {
+          ...(route.meta || {}),
+          hidden: false,
+        },
+      };
       return true;
     }
   });

@@ -74,7 +74,7 @@ export const usePermissionStore = defineStore("permission", () => {
 
   // actions
   function setRoutes(newRoutes: RouteRecordRaw[]) {
-    routes.value = constantRoutes.concat(newRoutes);
+    routes.value = newRoutes;
   }
   /**
    * 生成动态路由
@@ -89,13 +89,57 @@ export const usePermissionStore = defineStore("permission", () => {
         .then(({ data: asyncRoutes }) => {
           // 根据角色获取有访问权限的路由
           const accessedRoutes = filterAsyncRoutes(asyncRoutes, roles);
-          setRoutes(accessedRoutes);
-          resolve(accessedRoutes);
+          
+          // 合并动态路由和静态路由中重名的分组
+          const mergedRoutes = mergeRoutes(constantRoutes, accessedRoutes);
+          
+          setRoutes(mergedRoutes);
+          resolve(mergedRoutes);
         })
         .catch((error) => {
           reject(error);
         });
     });
+  }
+  
+  /**
+   * 合并动态路由和静态路由中重名的分组
+   * @param staticRoutes 静态路由
+   * @param dynamicRoutes 动态路由
+   * @returns 合并后的路由
+   */
+  function mergeRoutes(staticRoutes: RouteRecordRaw[], dynamicRoutes: RouteRecordRaw[]): RouteRecordRaw[] {
+    const mergedRoutes = [...staticRoutes];
+    
+    dynamicRoutes.forEach(dynamicRoute => {
+      // 检查是否存在相同path的路由
+      const existingRouteIndex = mergedRoutes.findIndex(route => route.path === dynamicRoute.path);
+      
+      if (existingRouteIndex !== -1) {
+        // 如果存在相同path的路由，合并它们的子路由
+        const existingRoute = mergedRoutes[existingRouteIndex];
+        const mergedChildren: RouteRecordRaw[] = [...(existingRoute.children || [])];
+        
+        // 合并动态路由的子路由到静态路由的子路由中，去重
+        (dynamicRoute.children || []).forEach(dynamicChild => {
+          const childExists = mergedChildren.some(child => child.path === dynamicChild.path);
+          if (!childExists) {
+            mergedChildren.push(dynamicChild);
+          }
+        });
+        
+        // 更新合并后的路由
+        mergedRoutes[existingRouteIndex] = {
+          ...existingRoute,
+          children: mergedChildren
+        };
+      } else {
+        // 如果不存在相同path的路由，直接添加
+        mergedRoutes.push(dynamicRoute);
+      }
+    });
+    
+    return mergedRoutes;
   }
   /**
    * 获取与激活的顶部菜单项相关的混合模式左侧菜单集合

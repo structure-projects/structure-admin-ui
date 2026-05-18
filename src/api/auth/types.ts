@@ -14,7 +14,32 @@ export interface LoginData {
    * 授权类型
    */
   grantType?: string;
+  /**
+   * 验证码ID
+   */
+  captchaId?: string;
+  /**
+   * 验证码
+   */
+  captcha?: string;
+}
 
+/**
+ * 验证码响应DTO
+ */
+export interface CaptchaDTO {
+  /**
+   * 验证码ID
+   */
+  captchaId: string;
+  /**
+   * 验证码图片Base64
+   */
+  imageBase64: string;
+  /**
+   * 验证码过期时间（秒）
+   */
+  expireSeconds: number;
 }
 
 /**

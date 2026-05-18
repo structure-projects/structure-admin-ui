@@ -205,7 +205,7 @@ onMounted(() => {
   <div class="app-container">
     <div class="search-container">
       <el-form ref="queryFormRef" :model="queryParams" :inline="true">
-        <el-form-item label="关键字" prop="name">
+        <el-form-item label="关键字" prop="keywords">
           <el-input v-model="queryParams.keywords" placeholder="字典类型名称/编码" clearable @keyup.enter="handleQuery" />
         </el-form-item>
         <el-form-item>

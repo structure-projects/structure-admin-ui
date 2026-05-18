@@ -23,7 +23,6 @@
 <script lang="ts" setup>
 import { useSettingsStore, useAppStore } from "@/store";
 import { isExternal } from "@/utils/index";
-import path from "path-browserify";
 import variables from "@/styles/variables.module.scss";
 
 const settingsStore = useSettingsStore();
@@ -36,12 +35,12 @@ const props = defineProps({
     default: () => {
       return [];
     },
-    type: Array<any>,
+    type: Array<any>
   },
   basePath: {
     type: String,
-    required: true,
-  },
+    required: true
+  }
 });
 
 /**
@@ -56,9 +55,11 @@ function resolvePath(routePath: string) {
   if (isExternal(props.basePath)) {
     return props.basePath;
   }
+  if (routePath.startsWith("/")) {
+    return routePath;
+  }
 
-  // 完整绝对路径 = 父级路径(/system) + 路由路径(/user)
-  const fullPath = path.resolve(props.basePath, routePath);
-  return fullPath;
+  // 完整绝对路径 = 父级路径 + 路由路径
+  return `${props.basePath}/${routePath}`.replace(/\/+/g, "/");
 }
 </script>

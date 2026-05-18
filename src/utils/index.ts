@@ -49,3 +49,9 @@ export function isExternal(path: string) {
 export function setStyleProperty(propName: string, value: string) {
   document.documentElement.style.setProperty(propName, value);
 }
+
+import MD5 from "crypto-js/md5";
+
+export function md5Hash(str: string): string {
+  return MD5(str).toString();
+}

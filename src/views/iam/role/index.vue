@@ -1,7 +1,7 @@
 <script setup lang="ts">
 defineOptions({
   name: "Role",
-  inheritAttrs: false,
+  inheritAttrs: false
 });
 
 import {
@@ -10,7 +10,7 @@ import {
   getRoleById,
   addRole,
   deleteRoles,
-  updateRoleMenus,
+  updateRoleMenus
 } from "@/api/system/role";
 import { getMenuOptions } from "@/api/system/menu";
 
@@ -27,9 +27,7 @@ const total = ref(0);
 /**
  * 查询的参数
  */
-const queryParams = reactive<RoleQuery>({
-  
-})
+const queryParams = reactive<RoleQuery>({});
 
 /**
  * 分页参数
@@ -48,7 +46,7 @@ const roleList = ref<RolePageVO[]>();
  * dialog 数据定义
  */
 const dialog = reactive<DialogType>({
-  visible: false,
+  visible: false
 });
 
 /**
@@ -58,14 +56,14 @@ const formData = reactive<RoleInfo>({
   sort: 1,
   enabled: true,
   code: "",
-  name: "",
+  name: ""
 });
 
 const rules = reactive({
   name: [{ required: true, message: "请输入角色名称", trigger: "blur" }],
   code: [{ required: true, message: "请输入角色编码", trigger: "blur" }],
   dataScope: [{ required: true, message: "请选择数据权限", trigger: "blur" }],
-  enabled: [{ required: true, message: "请选择状态", trigger: "blur" }],
+  enabled: [{ required: true, message: "请选择状态", trigger: "blur" }]
 });
 
 const menuDialogVisible = ref(false);
@@ -187,7 +185,7 @@ function handleDelete(roleId?: number) {
   ElMessageBox.confirm("确认删除已选中的数据项?", "警告", {
     confirmButtonText: "确定",
     cancelButtonText: "取消",
-    type: "warning",
+    type: "warning"
   }).then(() => {
     loading.value = true;
     deleteRoles(roleIds)
@@ -207,19 +205,19 @@ function openMenuDialog(row: RolePageVO) {
   if (roleId) {
     checkedRole = {
       id: roleId,
-      name: row.name,
+      name: row.name
     };
     menuDialogVisible.value = true;
     loading.value = true;
 
     // 获取所有的菜单
-    getMenuOptions().then((response) => {
+    getMenuOptions().then(response => {
       menuList.value = response.data;
       // 回显角色已拥有的菜单
       getRoleById(roleId)
         .then(({ data }) => {
           const authoritieList = data.authorities;
-          authoritieList.forEach((value) =>
+          authoritieList.forEach(value =>
             menuRef.value.setChecked(value, true, false)
           );
         })
@@ -241,9 +239,9 @@ function handleRoleMenuSubmit() {
       .map((node: any) => node.value);
 
     loading.value = true;
-    
+
     updateRoleMenus(roleId, checkedMenuIds)
-      .then((res) => {
+      .then(res => {
         ElMessage.success("分配权限成功");
         menuDialogVisible.value = false;
         resetQuery();
@@ -273,25 +271,32 @@ onMounted(() => {
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" @click="handleQuery"
-            ><i-ep-search />搜索</el-button
-          >
-          <el-button @click="resetQuery"><i-ep-refresh />重置</el-button>
+          <el-button type="primary" @click="handleQuery">
+            <i-ep-search />
+            搜索
+          </el-button>
+          <el-button @click="resetQuery">
+            <i-ep-refresh />
+            重置
+          </el-button>
         </el-form-item>
       </el-form>
     </div>
 
     <el-card shadow="never">
       <template #header>
-        <el-button type="primary" @click="openDialog()"
-          ><i-ep-plus />新增</el-button
-        >
+        <el-button type="primary" @click="openDialog()">
+          <i-ep-plus />
+          新增
+        </el-button>
         <el-button
           type="danger"
           :disabled="ids.length === 0"
           @click="handleDelete()"
-          ><i-ep-delete />删除</el-button
         >
+          <i-ep-delete />
+          删除
+        </el-button>
       </template>
 
       <el-table
@@ -323,7 +328,8 @@ onMounted(() => {
               link
               @click="openMenuDialog(scope.row)"
             >
-              <i-ep-position />分配权限
+              <i-ep-position />
+              分配权限
             </el-button>
             <el-button
               type="primary"
@@ -331,7 +337,8 @@ onMounted(() => {
               link
               @click="openDialog(scope.row.id)"
             >
-              <i-ep-edit />编辑
+              <i-ep-edit />
+              编辑
             </el-button>
             <el-button
               type="primary"
@@ -339,7 +346,8 @@ onMounted(() => {
               link
               @click="handleDelete(scope.row.id)"
             >
-              <i-ep-delete />删除
+              <i-ep-delete />
+              删除
             </el-button>
           </template>
         </el-table-column>
@@ -431,9 +439,9 @@ onMounted(() => {
 
       <template #footer>
         <div class="dialog-footer">
-          <el-button type="primary" @click="handleRoleMenuSubmit"
-            >确 定</el-button
-          >
+          <el-button type="primary" @click="handleRoleMenuSubmit">
+            确 定
+          </el-button>
           <el-button @click="menuDialogVisible = false">取 消</el-button>
         </div>
       </template>

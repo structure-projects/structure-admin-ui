@@ -63,6 +63,33 @@
           </el-form-item>
         </el-tooltip>
 
+        <!-- 验证码 -->
+        <el-form-item prop="captcha">
+          <div class="flex-y-center w-full">
+            <el-icon class="mx-2"><Picture /></el-icon>
+            <el-input
+              v-model="loginData.captcha"
+              :placeholder="$t('login.captcha')"
+              name="captcha"
+              size="large"
+              class="h-[48px]"
+              @keyup.enter="handleLogin"
+            />
+            <div class="captcha-wrapper">
+              <img
+                v-if="captchaImage"
+                :src="captchaImage"
+                alt="验证码"
+                class="captcha-img"
+                @click="refreshCaptcha"
+              />
+              <div v-else class="captcha-loading">
+                <el-icon class="loading-icon"><Loading /></el-icon>
+              </div>
+            </div>
+          </div>
+        </el-form-item>
+
         <!-- 登录按钮 -->
         <el-button
           :loading="loading"
@@ -91,11 +118,13 @@
 <script setup lang="ts">
 import { useSettingsStore, useUserStore, useAppStore } from "@/store";
 import { LoginData } from "@/api/auth/types";
-import { Sunny, Moon } from "@element-plus/icons-vue";
+import { Sunny, Moon, Lock, Picture, Loading } from "@element-plus/icons-vue";
 import { LocationQuery, LocationQueryValue, useRoute } from "vue-router";
 import router from "@/router";
 import defaultSettings from "@/settings";
 import { ThemeEnum } from "@/enums/ThemeEnum";
+import { md5Hash } from "@/utils";
+import { generateCaptcha } from "@/api/auth";
 
 // Stores
 const userStore = useUserStore();
@@ -110,13 +139,15 @@ const isDark = ref(settingsStore.theme === ThemeEnum.DARK);
 const icpVisible = ref(true);
 const loading = ref(false); // 按钮loading
 const isCapslock = ref(false); // 是否大写锁定
-const captchaBase64 = ref(); // 验证码图片Base64字符串
+const captchaImage = ref(""); // 验证码图片
+const captchaId = ref(""); // 验证码ID
 const loginFormRef = ref(ElForm); // 登录表单ref
 const { height } = useWindowSize();
 
 const loginData = ref<LoginData>({
   username: "admin",
   password: "123456",
+  captcha: "",
 });
 
 const loginRules = computed(() => {
@@ -143,16 +174,35 @@ const loginRules = computed(() => {
         message: `${prefix}${t("login.password")}`,
       },
     ],
-    captchaCode: [
+    captcha: [
       {
         required: true,
         trigger: "blur",
-        message: `${prefix}${t("login.captchaCode")}`,
+        message: `${prefix}${t("login.captcha")}`,
       },
     ],
   };
 });
 
+/**
+ * 获取验证码
+ */
+async function refreshCaptcha() {
+  try {
+    const response = await generateCaptcha();
+    const data = response.data;
+    captchaId.value = data.captchaId;
+    const imageBase64 = data.imageBase64;
+    if (imageBase64.startsWith("data:image")) {
+      captchaImage.value = imageBase64;
+    } else {
+      captchaImage.value = `data:image/png;base64,${imageBase64}`;
+    }
+    loginData.value.captcha = "";
+  } catch (error) {
+    console.error("获取验证码失败", error);
+  }
+}
 
 /**
  * 登录
@@ -162,8 +212,14 @@ function handleLogin() {
   loginFormRef.value.validate((valid: boolean) => {
     if (valid) {
       loading.value = true;
+      const data: LoginData = {
+        username: loginData.value.username,
+        password: md5Hash(loginData.value.password),
+        captchaId: captchaId.value,
+        captcha: loginData.value.captcha,
+      };
       userStore
-        .login(loginData.value)
+        .login(data)
         .then(() => {
           const query: LocationQuery = route.query;
           const redirect = (query.redirect as LocationQueryValue) ?? "/";
@@ -180,6 +236,7 @@ function handleLogin() {
           router.push({ path: redirect, query: otherQueryParams });
         })
         .catch(() => {
+          refreshCaptcha();
         })
         .finally(() => {
           loading.value = false;
@@ -217,6 +274,7 @@ function checkCapslock(e: any) {
 }
 
 onMounted(() => {
+  refreshCaptcha();
 });
 </script>
 
@@ -233,6 +291,45 @@ html.dark .login-container {
 
   .login-form {
     padding: 30px 10px;
+  }
+}
+
+.captcha-wrapper {
+  margin-left: 8px;
+  width: 120px;
+  height: 40px;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.captcha-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.captcha-loading {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--el-fill-color);
+}
+
+.loading-icon {
+  font-size: 20px;
+  color: var(--el-color-primary);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 
