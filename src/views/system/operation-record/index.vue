@@ -10,8 +10,8 @@ defineOptions({
 import { ref, reactive, onMounted } from "vue";
 import { ElForm, ElTable, ElDatePicker, ElInput, ElButton } from "element-plus";
 import type { FormInstance } from "element-plus";
-import { getOperationRecordApi } from "@/api/operation-record";
-import { OperationRecordQuery, OperationRecordVO } from "@/api/operation-record/types";
+import { getOperationRecordApi } from "@/api/system/operation-record";
+import { OperationRecordQuery, OperationRecordVO } from "@/api/system/operation-record/types";
 
 const queryFormRef = ref<FormInstance>();
 const loading = ref(false);
